@@ -50,16 +50,16 @@ int server_setup() {
 int server_connect(int from_client) {
 	char data[HANDSHAKE_BUFFER_SIZE];
 	read(from_client, data, HANDSHAKE_BUFFER_SIZE);
-	printf("[SUBSERVER] got message from client: %s\n", data);
+	printf("[SUBSERVER %d] got message from client: %s\n", getpid(), data);
 	int to_client = open(data, O_WRONLY);
 
 	//Connect to the private FIFO and send an acknowledgement
 	//strcpy(data, ACK);
-	printf("[SUBSERVER] sending acknowledgement to client\n");
+	printf("[SUBSERVER %d] sending acknowledgement to client\n", getpid());
 	write(to_client, ACK, strlen(ACK));
 	
 	//Now, wait for client to send back the acknowledgement
-	printf("[SUBSERVER] awaiting acknowledgement from client\n");
+	printf("[SUBSERVER %d] awaiting acknowledgement from client\n", getpid());
 	strncpy(data, "", sizeof(data));
 	read(from_client, data, sizeof(data));
 	
