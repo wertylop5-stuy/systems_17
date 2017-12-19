@@ -13,11 +13,12 @@ static void sighandler(int signo) {
 }
 
 char* rot13(char *text) {
+	printf("str: %s len: %d\n", text, strlen(text));
 	char *new_text = (char*)malloc(strlen(text)*sizeof(char));
 	
 	unsigned char temp;
 	int x;
-	for (x = 0; x < strlen(text)-1; x++) {
+	for (x = 0; x < strlen(text); x++) {
 		temp = isalpha(text[x]) ? text[x] + 13 : text[x];
 		if ((text[x] >= 'A' && text[x] <= 'Z') && temp > 'Z') {
 			temp -= 26;
@@ -53,13 +54,15 @@ void subserver(int from_client) {
 	while(read(from_client, data, sizeof(data))) {
 		printf("\n[SUBSERVER] Waiting for client message\n");
 		
+		/*
 		if (!strcmp(data, FIN)) {
 			printf("[SUBSERVER] received FIN from client\n");
 			//server_fin(from_client, to_client);
 			break;
 		}
+		*/
 		
-		printf("[SUBSERVER] Read message from client:\n%s", data);
+		printf("[SUBSERVER] Read message from client: %s\n", data);
 		//len = strlen(rot13(data));
 		process(data);
 		printf("[SUBSERVER] Sending response to client\n");
@@ -70,9 +73,10 @@ void subserver(int from_client) {
 
 void process(char * s) {
 	char *new = rot13(s);
+	printf("new: %s\n", new);
 	
 	int x = 0;
-	for (; x < strlen(s); x++) {
+	for (; x < strlen(s)+1; x++) {
 		s[x] = new[x];
 	}
 }

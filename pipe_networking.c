@@ -30,11 +30,6 @@ int server_setup() {
 	char data[HANDSHAKE_BUFFER_SIZE];
 	printf("[SERVER] awaiting connection\n");
 	wkp = open(WKP, O_RDONLY);
-	//read(wkp, data, HANDSHAKE_BUFFER_SIZE);
-	
-	//Client has sent name of private FIFO, open it
-	//printf("[SERVER] got message from client: %s\n", data);
-	//*to_client = open(data, O_WRONLY);
 	
 	//Remove the upstream WKP
 	printf("[SERVER] removing well known pipe\n");
@@ -85,7 +80,6 @@ int server_connect(int from_client) {
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_handshake(int *to_client) {
-
   int from_client;
 
   char buffer[HANDSHAKE_BUFFER_SIZE];
@@ -145,6 +139,7 @@ int client_handshake(int *to_server) {
   printf("[client] handshake: received [%s]\n", buffer);
 
   //remove pp
+  sprintf(buffer, "%d", getpid() );
   remove(buffer);
   printf("[client] handshake: removed pp\n");
 
