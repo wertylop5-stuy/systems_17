@@ -1,5 +1,15 @@
 #include "pipe_networking.h"
 
+static void validate(char *entity, char *data, const char* const expected) {
+	if (!strcmp(data, expected)) {
+		printf("[%s] received expected value\n", entity);
+	}
+	else {
+		fprintf(stderr, "[%s] did not receive expected value\n", entity);
+		exit(1);
+	}
+}
+
 /*=========================
   server_setup
   args:
@@ -12,7 +22,25 @@
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
-  return -1;
+	//The well known pipe the client will connect to
+	printf("[SERVER] creating well known pipe\n");
+	int wkp = mkfifo(WKP, 0644);
+	
+	//Whenever client connects, it will read the data that it sends thru
+	char data[HANDSHAKE_BUFFER_SIZE];
+	printf("[SERVER] awaiting connection\n");
+	wkp = open(WKP, O_RDONLY);
+	//read(wkp, data, HANDSHAKE_BUFFER_SIZE);
+	
+	//Client has sent name of private FIFO, open it
+	//printf("[SERVER] got message from client: %s\n", data);
+	//*to_client = open(data, O_WRONLY);
+	
+	//Remove the upstream WKP
+	printf("[SERVER] removing well known pipe\n");
+	remove(WKP);
+	
+	return wkp;
 }
 
 
@@ -25,7 +53,26 @@ int server_setup() {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  return -1;
+	char data[HANDSHAKE_BUFFER_SIZE];
+	read(from_client, data, HANDSHAKE_BUFFER_SIZE);
+	printf("[SUBSERVER] got message from client: %s\n", data);
+	int to_client = open(data, O_WRONLY);
+
+	//Connect to the private FIFO and send an acknowledgement
+	//strcpy(data, ACK);
+	printf("[SUBSERVER] sending acknowledgement to client\n");
+	write(to_client, ACK, strlen(ACK));
+	
+	//Now, wait for client to send back the acknowledgement
+	printf("[SUBSERVER] awaiting acknowledgement from client\n");
+	strncpy(data, "", sizeof(data));
+	read(from_client, data, sizeof(data));
+	
+	//Check if ACK and data match
+	validate("SUBSERVER", data, ACK);
+	printf("[SUBSERVER] connection established\n");
+	
+	return to_client;
 }
 
 /*=========================
@@ -43,15 +90,15 @@ int server_handshake(int *to_client) {
 
   char buffer[HANDSHAKE_BUFFER_SIZE];
 
-  mkfifo("luigi", 0600);
+  mkfifo(WKP, 0600);
 
   //block on open, recieve mesage
   printf("[server] handshake: making wkp\n");
-  from_client = open( "luigi", O_RDONLY, 0);
+  from_client = open( WKP, O_RDONLY, 0);
   read(from_client, buffer, sizeof(buffer));
   printf("[server] handshake: received [%s]\n", buffer);
 
-  remove("luigi");
+  remove(WKP);
   printf("[server] handshake: removed wkp\n");
 
   //connect to client, send message
@@ -81,7 +128,7 @@ int client_handshake(int *to_server) {
 
   //send pp name to server
   printf("[client] handshake: connecting to wkp\n");
-  *to_server = open( "luigi", O_WRONLY, 0);
+  *to_server = open( WKP, O_WRONLY, 0);
   if ( *to_server == -1 )
     exit(1);
 
